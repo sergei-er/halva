@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Edit Expense</h2>
+    <form action="{% url 'save_expense' expense.id %}" method="post">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div class="error">
+                {{ form.errors }}
+            </div>
+        {% endif %}
+        <div class="form-group">
+            <label for="id_category">Category:</label>
+            <input type="text" id="id_category" name="category" value="{{ expense.category }}" required>
+        </div>
+
+        <div class="form-group" style="display: flex; gap: 10px; align-items: center;">
+            <div>
+                <label for="id_amount">Amount:</label>
+                <input type="number" id="id_amount" name="amount" value="{{ expense.amount }}" required>
+            </div>
+            <div>
+                <label for="id_currency">Currency:</label>
+                <input type="text" id="id_currency" name="currency" value="{{ expense.currency }}" required>
+            </div>
+        </div>
+
+        <div class="form-group" style="display: flex; gap: 30px; align-items: center;">
+            <div>
+                <label for="targetAmount">Converted:</label>
+                <p id="targetAmount">{{ expense.amount_in_target_currency }}</p>
+            </div>
+            <div>
+                <label for="targetCurrency">Target Currency:</label>
+                <p id="targetCurrency">{{ user.userprofile.target_currency }}</p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="id_expense_date">Date:</label>
+            <input type="date" id="id_expense_date" name="expense_date" value="{{ expense.expense_date|date:'Y-m-d' }}" required>
+        </div>
+
+        <div class="form-group">
+            <button type="submit">Save</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
