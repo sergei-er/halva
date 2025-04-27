@@ -1,21 +1,22 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h2>Upload Receipt</h2>
+  <h2>Загрузить чек</h2>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.receipt_image.label_tag }} {{ form.receipt_image }}
-    <button type="submit">Upload</button>
+    <button type="submit">Загрузить</button>
   </form>
 
   {% if response %}
-    <h3>Processed Receipt Details:</h3>
+    <h3>Детали обработанного чека:</h3>
     <ul>
-      <li><strong>Category:</strong> {{ response.category }}</li>
-      <li><strong>Expense Date:</strong> {{ response.expense_date }}</li>
-      <li><strong>Amount:</strong> {{ response.amount }}</li>
-      <li><strong>Currency:</strong> {{ response.currency }}</li>
-      <li><strong>Converted:</strong> {{ response.amount_in_target_currency }}</li>
+      <li><strong>Место покупки: </strong> {{ expense.place }}</li>
+      <li><strong>Категория:</strong> {{ response.category }}</li>
+      <li><strong>Дата расхода:</strong> {{ response.expense_date }}</li>
+      <li><strong>Сумма:</strong> {{ response.amount }}</li>
+      <li><strong>Валюта:</strong> {{ response.currency }}</li>
+      <li><strong>Конвертировано:</strong> {{ response.amount_in_target_currency }}</li>
     </ul>
   {% endif %}
 {% endblock %}
@@ -32,4 +33,3 @@
       document.body.innerHTML = result;
     };
 </script>
-  

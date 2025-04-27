@@ -1,4 +1,4 @@
-"""Views for the core app"""
+"""Views для основного приложения"""
 
 import base64
 from decimal import Decimal
@@ -21,42 +21,49 @@ OPEN_EXCHANGE_RATES_API_URL = "https://openexchangerates.org/api/historical/"
 log = logging.getLogger(__name__)
 client = OpenAI()
 
+PARTNERS = {
+    "Транспорт": {
+        "name": "64autobus",
+        "message": "Вы тратите много средств на транспорт, рекомендуем нашего партнера X"
+    }
+}
+
 
 def encode_image(image_path):
-    """Encode the image file to base64 string"""
+    """Кодирует изображение в строку base64"""
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 
 def process_receipt(image_path):
-    """Process the receipt image using OpenAI API"""
+    """Обрабатывает изображение чека с помощью API OpenAI"""
     log.debug("views : process_receipt()")
     base64_image = encode_image(image_path)
-    category = "Sample Category"
-    expense_date = "2024-11-13"
-    amount = 10.00
-    currency = "EUR"
+    category = "Пример категории"
+    expense_date = "26-04-2025"
+    amount = 1000.00
+    currency = "RUB"
 
     base_categories = [
-        "Housing",
-        "Utilities",
-        "Transportation",
-        "Groceries",
-        "Dining Out",
-        "Healthcare",
-        "Debt Payments",
-        "Insurance",
-        "Clothing",
-        "Entertainment",
-        "Education",
-        "Childcare",
-        "Pet Care",
-        "Subscriptions",
-        "Miscellaneous",
+        "Жилье",
+        "Коммунальные услуги",
+        "Транспорт",
+        "Продукты",
+        "Рестораны",
+        "Здравоохранение",
+        "Платежи по долгам",
+        "Страхование",
+        "Одежда",
+        "Развлечения",
+        "Образование",
+        "Уход за детьми",
+        "Уход за питомцами",
+        "Подписки",
+        "Прочее",
     ]
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4.1-mini",
         messages=[
             {
                 "role": "user",
@@ -64,16 +71,16 @@ def process_receipt(image_path):
                     {
                         "type": "text",
                         "text": (
-                            "Analyze the provided receipt and extract the following details: "
-                            "1. Category: Determine the category of the expense from this list: "
-                            f"{', '.join(base_categories)}. 2.Date: Identify the transaction date. "
-                            "3. Amount: Extract the expense amount as a decimal number. Consider: "
-                            "- A comma may serve as a thousand separator or decimal separator. "
-                            "- In KRW (Korean Won), the amount is never lower than a thousand. "
-                            "4. Currency: Identify the currency used in the expense starting "
-                            "(three-character ISO 4217 code). Respond strictly in JSON format, "
-                            "and ending with braces, without any additional markup language "
-                            'or explanation. Example response: {"category": "<category>",'
+                            "Проанализируйте предоставленный чек и извлеките следующие данные: "
+                            "1. Категория: Определите категорию расхода из следующего списка: "
+                            f"{', '.join(base_categories)}. 2. Дата: Определите дату транзакции. "
+                            "3. Сумма: Извлеките сумму расхода как десятичное число. Обратите внимание: "
+                            "- Запятая может быть разделителем тысяч или десятичным разделителем. "
+                            "4. Валюта: Определите валюту, использованную в расходе, начиная с "
+                            "5. Место покупки (например, название магазина, аптеки, ресторана). "
+                            "(трехсимвольный код валюты по ISO 4217). Ответьте строго в формате JSON, "
+                            "заканчивая фигурными скобками, без дополнительного языка разметки "
+                            'или объяснений. Пример ответа: { "place": "<place>", "category": "<category>",'
                             ' "date": "<date>", "amount": <amount>,'
                             ' "currency": "<currency>"}'
                         ),
@@ -94,44 +101,45 @@ def process_receipt(image_path):
             or not response.choices
             or not response.choices[0].message.content
         ):
-            raise ValueError("Empty or invalid response from OpenAI API")
+            raise ValueError("Пустой или неверный ответ от API OpenAI")
 
         content = response.choices[0].message.content.strip()
-        log.debug("Response from OpenAI")
+        log.debug("Ответ от OpenAI")
         log.debug(content)
 
         if content.startswith("```json") and content.endswith("```"):
-            log.debug("Content: %s", content)
+            log.debug("Контент: %s", content)
             content = content[7:-3].strip()
-            log.debug("Content after stripping markdown: %s", content)
+            log.debug("Контент после удаления разметки: %s", content)
 
         response_data = json.loads(content)
 
         if "/" in response_data.get("date"):
             response_data["date"] = response_data["date"].replace("/", "-")
 
-        category = response_data.get("category", "Miscellaneous")
+        category = response_data.get("category", "Прочее")
         if category not in base_categories:
-            category = "Miscellaneous"
+            category = "Прочее"
 
+        place = response_data.get("place", "Неизвестное место")
         expense_date = response_data.get("date")
         amount = response_data.get("amount")
         currency = response_data.get("currency").upper()
 
-        return category, expense_date, amount, currency
+        return place, category, expense_date, amount, currency
     except json.JSONDecodeError as e:
-        log.error("JSON decode error: %s", e)
+        log.error("Ошибка декодирования JSON: %s", e)
         raise
     except ValueError as e:
-        log.error("Value error: %s", e)
+        log.error("Ошибка значения: %s", e)
         raise
     except Exception as e:
-        log.error("Unexpected error: %s", e)
+        log.error("Неожиданная ошибка: %s", e)
         raise
-
+    
 
 def get_exchange_rate(date, from_currency, to_currency):
-    """Get the exchange rate for the given date and currencies"""
+    """Получить курс обмена для указанной даты и валют"""
 
     if from_currency == to_currency:
         return 1, 1
@@ -146,13 +154,13 @@ def get_exchange_rate(date, from_currency, to_currency):
         data = response.json()
         return data["rates"].get(from_currency), data["rates"].get(to_currency)
 
-    log.error("Error fetching exchange rate: %s", response.text)
+    log.error("Ошибка при получении курса обмена: %s", response.text)
     return None, None
 
 
 @login_required
 def upload_receipt(request):
-    """View to upload the receipt image and process it"""
+    """Вьюшка для загрузки изображения чека и его обработки"""
     log.debug("views : upload_receipt()")
     if request.method == "POST":
         form = ExpenseForm(request.POST, request.FILES)
@@ -161,23 +169,24 @@ def upload_receipt(request):
             expense_dto.user = request.user
             expense_dto.save()
 
-            category, expense_date, amount, currency = process_receipt(
+            place, category, expense_date, amount, currency = process_receipt(
                 expense_dto.receipt_image.path
             )
 
+            expense_dto.place = place
             expense_dto.category = category
             expense_dto.expense_date = expense_date
             expense_dto.amount = amount
             expense_dto.currency = currency
 
-            user_profile = UserProfile.objects.get(user=request.user)
-            target_currency = user_profile.target_currency
+           
+            target_currency = "RUB"
 
             exchange_rate_to_usd, exchange_rate_to_target = get_exchange_rate(
                 expense_date, currency, target_currency
             )
             log.debug(
-                "Exchange rates: to USD %s, to target %s",
+                "Курсы обмена: к RUB %s, к целевой валюте %s",
                 exchange_rate_to_usd,
                 exchange_rate_to_target,
             )
@@ -194,15 +203,15 @@ def upload_receipt(request):
                 expense_dto.amount_in_target_currency = round(
                     converted_amount_to_target, 2
                 )
-                log.debug("Converted amount: %s", expense_dto.amount_in_target_currency)
+                log.debug("Конвертированная сумма в RUB: %s", expense_dto.amount_in_target_currency)
             else:
-                log.error("Could not convert amount to target currency")
+                log.error("Не удалось конвертировать сумму в целевую валюту")
 
             expense_dto.save()
-            # Redirect to the expense page to adjust information
+            # Перенаправить на страницу расхода для корректировки данных
             return redirect("expense", expense_id=expense_dto.id)
         else:
-            log.error("Form errors: %s", form.errors)
+            log.error("Ошибки формы: %s", form.errors)
     else:
         form = ExpenseForm()
     return render(request, "upload.html", {"form": form})
@@ -210,11 +219,24 @@ def upload_receipt(request):
 
 @login_required
 def dashboard(request):
-    """View to display the user's expenses ordered by date and aggregated by category"""
+    """Вьюшка для отображения расходов пользователя, отсортированных по дате и агрегированных по категориям"""
     expenses = Expense.objects.filter(user=request.user).order_by("-expense_date")
-
     expenses = expenses.annotate(category_normalized=Trim(Lower(F("category"))))
-    log.debug("Normalized Category: %s", expenses.values("category_normalized"))
+
+    log.debug("Нормализованная категория: %s", expenses.values("category_normalized"))
+    total_spent = expenses.aggregate(
+        total=Coalesce(Sum('amount_in_target_currency', output_field=FloatField()), Value(0, output_field=FloatField()))
+    )['total']
+
+    food_spent = expenses.filter(category_normalized="транспорт").aggregate(
+        total=Coalesce(Sum('amount_in_target_currency', output_field=FloatField()), Value(0, output_field=FloatField()))
+    )['total']
+
+    recommendation_message = None
+
+    # Проверка: если траты на еду больше 50% всех трат
+    if total_spent > 0 and food_spent / total_spent > 0.5:
+        recommendation_message = PARTNERS["Транспорт"]["message"]
 
     category_data = (
         expenses.values("category_normalized")
@@ -231,33 +253,34 @@ def dashboard(request):
         (
             item["category_normalized"].capitalize()
             if item["category_normalized"]
-            else "Uncategorized"
+            else "Без категории"
         )
         for item in category_data
     ]
     amounts = [float(item["total_amount"]) for item in category_data]
 
-    log.debug("Aggregated Category Data: %s", categories)
+    log.debug("Агрегированные данные по категориям: %s", categories)
 
     return render(
         request,
         "dashboard.html",
         {
             "expenses": expenses,
-            "categories": json.dumps(categories),
-            "amounts": json.dumps(amounts),
+            "categories": categories,  # <--- обычный список
+            "amounts": amounts,         # <--- обычный
+            "recommendation_message": recommendation_message,
         },
     )
 
 
 @login_required
 def expense(request, expense_id):
-    """View to display the details of a specific expense"""
+    """Вьюшка для отображения деталей конкретного расхода"""
     log.debug("views : expense()")
-    log.debug("Expense ID: %s", expense_id)
+    log.debug("ID расхода: %s", expense_id)
     expense_detail = Expense.objects.get(id=expense_id, user=request.user)
-    log.debug("Expense detail: %s", expense_detail.expense_date)
-    log.debug("User Currency: %s", request.user.userprofile.target_currency)
+    log.debug("Детали расхода: %s", expense_detail.expense_date)
+    log.debug("Валюта пользователя: %s", request.user.userprofile.target_currency)
     return render(
         request, "expense.html", {"expense": expense_detail, "user": request.user}
     )
@@ -265,7 +288,7 @@ def expense(request, expense_id):
 
 @login_required
 def save_expense(request, expense_id):
-    """View to save the edited expense details with currency conversion"""
+    """Вьюшка для сохранения отредактированных данных о расходе с конвертацией валюты"""
     log.debug("views : save_expense()")
     expense_edit = Expense.objects.get(id=expense_id, user=request.user)
 
@@ -274,8 +297,8 @@ def save_expense(request, expense_id):
         if form.is_valid():
             expense_form = form.save(commit=False)
 
-            user_profile = UserProfile.objects.get(user=request.user)
-            target_currency = user_profile.target_currency
+           
+            target_currency = "RUB"
 
             exchange_rate_to_usd, exchange_rate_to_target = get_exchange_rate(
                 expense_form.expense_date, expense_form.currency, target_currency
@@ -284,25 +307,24 @@ def save_expense(request, expense_id):
             if exchange_rate_to_usd and exchange_rate_to_target:
                 exchange_rate_to_usd = Decimal(str(exchange_rate_to_usd))
                 exchange_rate_to_target = Decimal(str(exchange_rate_to_target))
+                amount_decimal = Decimal(str(expense_form.amount))
 
-                converted_amount_to_usd = expense_form.amount / exchange_rate_to_usd
+                converted_amount_to_usd = amount_decimal / exchange_rate_to_usd
                 converted_amount_to_target = (
                     converted_amount_to_usd * exchange_rate_to_target
                 )
                 expense_form.amount_in_target_currency = round(
                     converted_amount_to_target, 2
                 )
+                log.debug("Конвертированная сумма: %s", expense_form.amount_in_target_currency)
+            else:
+                log.error("Не удалось конвертировать сумму в целевую валюту")
 
             expense_form.save()
-            log.debug("Expense updated successfully")
-            return redirect("expense", expense_id=expense_id)
+            return redirect("expense", expense_id=expense_form.id)
         else:
-            log.error("Form errors: %s", form.errors)
+            log.error("Ошибки формы: %s", form.errors)
     else:
         form = ExpenseEditForm(instance=expense_edit)
 
-    return render(
-        request,
-        "expense.html",
-        {"form": form, "expense": expense_edit, "user": request.user},
-    )
+    return render(request, "save_expense.html", {"form": form})

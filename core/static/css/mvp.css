@@ -127,6 +127,11 @@ header {
   text-align: var(--justify-important);
 }
 
+header img.logo {
+  height: 30px; /* Было 35px, стало меньше */
+  margin-right: 10px;
+}
+
 header a b,
 header a em,
 header a i,

@@ -1,30 +1,32 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Dashboard</h2>
+<h2>Статистика расходов</h2>
 
 {% if amounts|length > 0 %}
 <div style="width: 100%; max-width: 600px; height: 400px; margin: auto;">
     <canvas id="expensesChart"></canvas>
 </div>
 {% else %}
-    <p>No expenses to display.</p>
+    <p>Нет расходов для отображения.</p>
 {% endif %}
 
-<!-- Existing table -->
+<!-- Таблица расходов -->
 <div style="max-height: 400px; overflow-y: auto;">
-    <table style="width: 100%; border-collapse: collapse;">
+    <table>
         <thead>
             <tr>
-                <th>Category</th>
-                <th>Amount</th>
-                <th>Currency</th>
-                <th>Date</th>
+                <th>Место покупки</th>
+                <th>Категория</th>
+                <th>Сумма</th>
+                <th>Валюта</th>
+                <th>Дата</th>
             </tr>
         </thead>
         <tbody>
             {% for expense in expenses %}
             <tr onclick="window.location.href='{% url 'expense' expense.id %}'" style="cursor: pointer;">
+                <td>{{ expense.place }}</td>
                 <td>{{ expense.category }}</td>
                 <td>{{ expense.amount }}</td>
                 <td>{{ expense.currency }}</td>
@@ -35,15 +37,27 @@
     </table>
 </div>
 
-<!-- Script to render the chart -->
+<!-- Защищённые данные JSON -->
+{{ categories|json_script:"categories-data" }}
+{{ amounts|json_script:"amounts-data" }}
+{% if recommendation_message %}
+    <div class="alert alert-info" style="margin-top: 20px;">
+        <strong>Рекомендация:</strong> {{ recommendation_message }}
+    </div>
+{% endif %}
+
+<!-- Скрипт для отображения графика -->
 <script>
-    var ctx = document.getElementById('expensesChart').getContext('2d');
-    var expensesChart = new Chart(ctx, {
+    const categories = JSON.parse(document.getElementById('categories-data').textContent);
+    const amounts = JSON.parse(document.getElementById('amounts-data').textContent);
+
+    const ctx = document.getElementById('expensesChart').getContext('2d');
+    const expensesChart = new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: {{ categories|safe }},
+            labels: categories,
             datasets: [{
-                data: {{ amounts|safe }},
+                data: amounts,
                 backgroundColor: [
                     '#FF6384',
                     '#36A2EB',
@@ -71,10 +85,15 @@
                 },
                 title: {
                     display: true,
-                    text: 'Expenses by Category'
+                    text: 'Расходы по категориям'
                 }
             }
         }
     });
 </script>
 {% endblock %}
+{% if recommendation_message %}
+    <div class="alert alert-info" style="margin-top: 20px;">
+        <strong>Рекомендация:</strong> {{ recommendation_message }}
+    </div>
+{% endif %}

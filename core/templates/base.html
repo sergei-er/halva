@@ -1,35 +1,43 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Budget Lens{% endblock %}</title>
+    <title>{% block title %}Халва Чек{% endblock %}</title>
     <link rel="stylesheet" type="text/css" href="{% static 'css/mvp.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 <body style="text-align: center;">
     <header style="padding: 0rem 1rem;">
-        <h1>Budget Lens</h1>
+        <a href="/"> <img src="{% static 'images/image_2025-04-26_15-23-25.png' %}" 
+            alt="Логотип" 
+            class="logo"
+            width="300" 
+            height="120"
+            style="float: top"></a>
+        <h1>Чеки</h1>
+
         {% if user.is_authenticated %}
         <nav style="justify-content: center; margin-bottom: 0rem; margin-right: 1rem;">
             <ul style="display: flex; list-style: none; padding: 0;">
                 <li>
                     <form action="{% url 'dashboard' %}" method="post" style="display: inline; border: none; box-shadow: none;">
                         {% csrf_token %}
-                        <button type="submit" style="font-size: 0.8em; padding: 5px 10px;">Dashboard</button>
+                        <button type="submit" style="font-size: 0.8em; padding: 5px 10px;">Статистика</button>
                     </form>
                 </li>
                 <li>
                     <form action="{% url 'upload' %}" method="post" style="display: inline; border: none; box-shadow: none;">
                         {% csrf_token %}
-                        <button type="submit" style="font-size: 0.8em; padding: 5px 10px;">Upload</button>
+                        <button type="submit" style="font-size: 0.8em; padding: 5px 10px;">Загрузить чек</button>
                     </form>
                 </li>
                 <li>
                     <form action="{% url 'logout' %}" method="post" style="display: inline; border: none; box-shadow: none;">
                         {% csrf_token %}
-                        <button type="submit" style="font-size: 0.8em; padding: 5px 10px;">Log Out</button>
+                        <button type="submit" style="font-size: 0.8em; padding: 5px 10px;">Выйти</button>
                     </form>
                 </li>
             </ul>
@@ -38,11 +46,11 @@
     </header>
     <main style="padding: 1rem;">
         {% block content %}
-        <!-- Content goes here -->
+        <!-- Контент будет вставлен здесь -->
         {% endblock %}
     </main>
     <footer style="text-align: center;">
-        <p>&copy; 2024 1oannis.com - All rights reserved.</p>
+        <p>&copy;2025 McLovers <3 </p>
     </footer>
 </body>
 </html>
